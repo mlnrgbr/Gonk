@@ -24,7 +24,7 @@
 
   module.exports = function(robot) {
     robot.respond(/meme help/, function(msg) {
-      msg.send("Available memes:");
+      msg.send("Available memes ('gonk meme <name> <quotedTopCaption> <quotedBottomCaption>'):");
 
       for (var meme in memeHelp) {
         msg.send(meme + ": " + memeHelp[meme]);
