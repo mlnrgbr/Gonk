@@ -11,7 +11,8 @@
     thumbguy: "Thumbs-Up Suited Guy",
     stonerstoney: "Stoner Stoney",
     o9000: "Over 9000 Vegeta",
-    octocat: "Octocat"
+    octocat: "Octocat", 
+    ducreux: "Joseph Ducreux"
   }
 
   memes = {
