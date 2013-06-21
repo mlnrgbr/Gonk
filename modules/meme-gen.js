@@ -9,6 +9,7 @@
     bcat: "Business Cat",
     pguy: "Programmer Guy",
     thumbguy: "Thumbs-Up Suited Guy",
+    stonerstoney: "Stoner Stoney",
     o9000: "Over 9000 Vegeta"
   }
 
@@ -19,6 +20,7 @@
     bcat: "04E9400000602CD2EEF7C80651C0937A",
     pguy: "0493500308D108CFD8D58C7A51BF2E93",
     thumbguy: "040F8013656E5040581289475150DD5D",
+    stonerstoney: "04EF40124A4F5040572846F1512D9CC6",
     o9000: "049D200338A944244D120DDD50535BC2"
   };
 
