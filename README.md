@@ -3,6 +3,10 @@ Gonk
 
 Your friendly neighborhood IRC droid
 
+##### This fork is for Uncodin-specific scripts.
+
+##### If you wish to contribute to Gonk itself, please fork and send pull requests to Gonk/Gonk.
+
 ## What is Gonk?
 
 Gonk is an IRC bot written in [Go](http://golang.org). Its modular design and embedded JavaScript engine make it easy to dynamically add functionality via "modules".
