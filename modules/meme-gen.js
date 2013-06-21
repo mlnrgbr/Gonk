@@ -38,7 +38,7 @@
     });
     
     //Temporary meme add
-    robot.respond(/meme add (^[a-z0-9]+$) ([A-Z0-9]{32})/, function(msg) {
+    robot.respond(/meme add ([a-z0-9]+) ([A-Z0-9]{32})/, function(msg) {
       var alias = msg.match[1];
       var guid = msg.match[2];
       
