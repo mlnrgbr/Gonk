@@ -36,20 +36,39 @@
         msg.send(meme + ": " + memeHelp[meme]);
       }
     });
+    
+    //Temporary meme add
+    robot.respond(/addmeme "(.*)" "(.*)"/, function(msg) {
+      var alias = msg.match[2];
+      var guid = msg.match[3];
+      
+      if (!(alias in memes)) {
+        memes[alias] = guid
+        memeHelp[alias] = alias + " (TEMPORARY)";
+        msg.send(guid + " added as " + alias);
+      } else {
+        msg.send("I already know " + alias);
+      }
+    });
 
     return robot.respond(/meme( me)? (.*) "(.*)" "(.*)"/, function(msg) {
       meme = msg.match[2];
       topStr = msg.match[3];
       bottomStr = msg.match[4];
 
-      if (!memes[meme]) {
-        return msg.send("Sorry, I don't know that meme.");
+      var image = memes[meme];
+      if (!image) {
+        if (!/[A-Z0-9]{32}/.test(meme)) {
+          return msg.send("Sorry, I don't know that meme.");
+        } else {
+          image = meme;
+        }
       }
 
       return msg.http(macroServer + "/macro")
       .header('Content-Type', 'application/x-www-form-urlencoded')
       .query({
-        image: memes[meme],
+        image: image,
         top: topStr,
         bottom: bottomStr
       })
