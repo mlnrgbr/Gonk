@@ -39,8 +39,8 @@
     
     //Temporary meme add
     robot.respond(/meme add "(.*)" "(.*)"/, function(msg) {
-      var alias = msg.match[2];
-      var guid = msg.match[3];
+      var alias = msg.match[1];
+      var guid = msg.match[2];
       
       if (!(alias in memes)) {
         memes[alias] = guid
