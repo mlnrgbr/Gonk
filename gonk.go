@@ -4,15 +4,14 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	log "github.com/fluffle/golog/logging"
-	"os"
-	//"os/signal"
-	"io/ioutil"
-	"regexp"
-	"strings"
-
 	"github.com/Gonk/go-v8"
 	irc "github.com/Gonk/goirc/client"
+	log "github.com/fluffle/golog/logging"
+	"github.com/howeyc/fsnotify"
+	"io/ioutil"
+	"os"
+	"os/signal"
+	"strings"
 )
 
 func printUsageAndExit() {
@@ -22,12 +21,23 @@ func printUsageAndExit() {
 }
 
 func loadModules(conn *irc.Conn) (modules []IModule) {
-	v8ctx := v8.NewContext()
-
 	// Load each module in the modules directory
 	scripts, err := ioutil.ReadDir("modules")
 	if err != nil {
 		log.Fatal(err.Error())
+	}
+
+	// Read base module script
+	file, err := os.Open("module.js")
+	if err != nil {
+		log.Fatal("Error reading base module script:", err)
+	}
+
+	defer file.Close()
+
+	baseScript, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Fatal("Error reading base module script:", err)
 	}
 
 	for _, fileInfo := range scripts {
@@ -36,7 +46,9 @@ func loadModules(conn *irc.Conn) (modules []IModule) {
 				continue
 			}
 
-			file, err := os.Open("modules/" + fileInfo.Name())
+			filename := "modules/" + fileInfo.Name()
+
+			file, err := os.Open(filename)
 			if err != nil {
 				log.Error("Error loading module:", err)
 				continue
@@ -50,39 +62,84 @@ func loadModules(conn *irc.Conn) (modules []IModule) {
 				continue
 			}
 
-			module := newModule(fileInfo.Name(), conn, v8ctx)
+			module := NewModule(fileInfo.Name(), conn)
 
-			ret, err := module.Init(string(script))
+			// Init module with base script and its own script
+			ret, err := module.Init(v8.NewContext(), string(baseScript)+string(script))
 
 			if err != nil {
 				log.Error("Error loading module: %s\n%s", err, ret)
+				continue
 			}
 
+			// Create file watcher
+			watcher, err := fsnotify.NewWatcher()
+			if err != nil {
+				log.Error("Error creating file watcher for %s:", fileInfo.Name(), err)
+			}
+
+			watcher.Watch(filename)
+
+			go func(filename string) {
+				for {
+					select {
+					case ev := <-watcher.Event:
+						watcher.Watch(filename) // Make sure we continue to watch the file at this location
+
+						if !ev.IsModify() {
+							// Only reload the module on a modification event
+							continue
+						}
+					case err := <-watcher.Error:
+						log.Error("Error watching file: %s", filename, err)
+					}
+
+					// Reload script
+					log.Info("Reloading %s", filename)
+
+					file, err := os.Open(filename)
+					if err != nil {
+						log.Error("Error loading module:", err)
+						continue
+					}
+
+					defer file.Close()
+
+					script, err := ioutil.ReadAll(file)
+					if err != nil {
+						log.Error("Error loading module:", err)
+						continue
+					}
+
+					ret, err := module.Init(v8.NewContext(), string(baseScript)+string(script))
+					if err != nil {
+						log.Error("Error reloading module: %s\n%s", err, ret)
+					}
+				}
+			}(filename)
+
 			log.Info("Loaded module %s", fileInfo.Name())
-			modules = append(modules, module)
+			modules = append(modules, &module)
 		}
 	}
 
 	return
 }
 
-func newModule(name string, client *irc.Conn, context *v8.V8Context) Module {
-	return Module{name, client, context, make(map[*regexp.Regexp]v8.V8Function), make(map[*regexp.Regexp]v8.V8Function)}
-}
-
 func main() {
-	//quitting := make(chan bool)
+	quitting := make(chan bool)
 	disconnecting := make(chan bool)
 
-	/*/ Set up ^C handler
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt)
+	// Set up signal handlers
+	quitSignal := make(chan os.Signal, 1)
+	signal.Notify(quitSignal, os.Interrupt)
+	signal.Notify(quitSignal, os.Kill)
+
 	go func() {
-		// Quit on ^C
-		<-interrupt
+		// Shutdown if quitSignal received
+		<-quitSignal
 		quitting <- true
 	}()
-	//*/
 
 	// Parse flags
 	server := flag.String("server", "", "Hostname and/or port (e.g. 'localhost:6667')")
@@ -162,10 +219,12 @@ func main() {
 
 	log.Info(c.String())
 
-	defer func() {
-		//<-quitting
+	go func() {
+		<-quitting
 
 		c.Quit("*GONK*")
+
+		log.Info("Shutting down")
 
 		disconnecting <- true
 	}()
