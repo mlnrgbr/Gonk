@@ -45,7 +45,7 @@ func (l LinkShortener) Hear(target string, line string, from string) (responded 
 	return
 }
 
-// ShortenUrls shortens URLs in the given text. By default, it only shortens
+// ShortenUrls shortens URLs in the given text. By default, it only shortens G I T   E X P E R I  ME N T
 // URLs if they are longer than the specified maxLength and not embeddable.
 // Supplying a true value to shortenEmbeds or shortenImages will change that
 // behavior. In addition, if shortenImages is true, the shortened URL will
